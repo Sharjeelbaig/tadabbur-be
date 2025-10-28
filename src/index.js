@@ -8,9 +8,11 @@ import generateExplanationRouter from './routes/generate_explanation';
 import retrieveSurahRouter from './routes/retrieve_surah';
 import retrieveTafseerRouter from './routes/retrieve_tafseer';
 import retrieveRecitationRouter from './routes/retrieve_recitation';
+import cors from 'cors';
 
 const app = express();
 
+app.use(cors());
 app.use('/', listSurahRouter);
 app.use('/', listTafseerRouter);
 app.use('/', listTranslationRouter);
