@@ -16,6 +16,7 @@
 	"dependencies": {
 		"@langchain/ollama": "^1.0.0",
 		"@quranjs/api": "^2.0.0",
+		"dotenv": "^17.2.3",
 		"express": "^5.1.0",
 		"extract-json-from-string": "^1.0.1"
 	}

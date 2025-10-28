@@ -11,7 +11,8 @@
 		"global_fetch_strictly_public", "nodejs_compat",
 	"enable_nodejs_http_modules",
 	"enable_nodejs_http_server_modules",
-	"experimental"],
+	// "experimental"
+],
 	"observability": {
 		"enabled": true
 	},
