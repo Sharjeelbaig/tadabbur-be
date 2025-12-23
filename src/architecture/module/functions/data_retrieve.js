@@ -4,15 +4,22 @@ export async function retrieveSurah(surahId, translation_id) {
     const surah = await quranClient?.verses?.findByChapter(surahId, {
         words: true,
         translations: [translation_id],
-        wordFields: ['textUthmani'],
+        wordFields: ['textUthmani', 'transliteration', 'translation'],
         per_page: 300,
         page: 1
     })
     const verses = surah?.map(data => {
     const translation = data?.translations?.map(translation => translation?.text)[0]
-    const words = data?.words?.map(words => words?.textUthmani) 
-    const word_audios = data?.words?.map(words => 'https://audio.qurancdn.com/'+words?.audioUrl)?.slice(0, -1)
-    const verse = data?.words?.map(words => words?.textUthmani)?.join(' ')
+    const words = data?.words?.map(word => word?.textUthmani) 
+    const word_audios = data?.words?.map(word => 'https://audio.qurancdn.com/'+word?.audioUrl)?.slice(0, -1)
+    const word_translations = data?.words?.map(word => ({
+        text: word?.textUthmani || '',
+        transliteration: word?.transliteration?.text || '',
+        translation: word?.translation?.text || '',
+        audio: word?.audioUrl ? 'https://audio.qurancdn.com/' + word?.audioUrl : null,
+        charType: word?.charTypeName || 'word'
+    }))?.filter(w => w.charType === 'word') // Filter out non-word characters like end markers
+    const verse = data?.words?.map(word => word?.textUthmani)?.join(' ')
     const key = data?.verseKey
     return (
         {
@@ -20,6 +27,7 @@ export async function retrieveSurah(surahId, translation_id) {
         translation,
         words,
         word_audios,
+        word_translations,
         key
         }
     )
