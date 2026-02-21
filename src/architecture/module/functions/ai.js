@@ -21,7 +21,7 @@ export async function generateExplanation(tafseerText, verse) {
     Guidelines:
     Keep the tone formal but simple (not technical or slang).
     Preserve the original meaning and context.
-    Organize the explanation using clear headings, subheadings, and bullet points.
+    Organize the explanation using clear headings (#), subheadings (###), and bullet points (->).
     Highlight and clearly summarize the important points.
     Define key too formal English words and Islamic terms used in the explanation.
     Add a short final summary covering the main ideas.
