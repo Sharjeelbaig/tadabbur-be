@@ -26,10 +26,12 @@ export async function generateExplanation(tafseerText, verse) {
     Define key too formal English words and Islamic terms used in the explanation.
     Add a short final summary covering the main ideas.
     Strictly follow this output schema:
+	\`\`\`json
     {
     explanation: string,
     keyTerms: { term: string, definition: string }[]
     }
+	\`\`\`
     `;
 
 	const response = await ollamaClient.invoke([
