@@ -1,5 +1,7 @@
 import {ChatOllama} from '@langchain/ollama'
 import {env} from 'process'
+import {JsonOutputParser} from '@langchain/core/output_parsers'
+
 // import dotenv from 'dotenv'
 // dotenv.config()
 
@@ -16,5 +18,7 @@ const ollamaClient = new ChatOllama({
     temperature: 0.7,
 })
 
+const jsonParser = new JsonOutputParser()
 
 export default ollamaClient
+export {jsonParser}

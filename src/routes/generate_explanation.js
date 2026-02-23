@@ -9,8 +9,8 @@ router.post('/generate-explanation', express.json(), async (req, res, next) => {
         if (!tafseerText) {
             return res.status(400).json({ error: 'tafseerText is required' });
         }
-        const explanation = await generateExplanation(tafseerText);
-        res.json(explanation);
+        const result = await generateExplanation(tafseerText);
+        res.json(result);
     } catch (err) {
         next(err);
     }
