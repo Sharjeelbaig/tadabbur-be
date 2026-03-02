@@ -8,7 +8,7 @@ import {JsonOutputParser} from '@langchain/core/output_parsers'
 const ollamaClient = new ChatOllama({
     baseUrl: 'https://ollama.com',
     // model: 'gpt-oss:120b-cloud',
-    model: 'gpt-oss:20b-cloud',
+    model: 'gpt-oss:120b-cloud',
     headers: {
         'Authorization': `Bearer ${env.OLLAMA_API_KEY}`,
     },

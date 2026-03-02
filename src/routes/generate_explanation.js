@@ -5,11 +5,11 @@ const router = express.Router();
 
 router.post('/generate-explanation', express.json(), async (req, res, next) => {
     try {
-        const { tafseerText } = req.body;
+        const { tafseerText, verse, tafseerAuthor } = req.body;
         if (!tafseerText) {
             return res.status(400).json({ error: 'tafseerText is required' });
         }
-        const result = await generateExplanation(tafseerText);
+        const result = await generateExplanation(tafseerText, verse, tafseerAuthor);
         res.json(result);
     } catch (err) {
         next(err);

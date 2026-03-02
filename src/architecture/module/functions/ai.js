@@ -67,33 +67,55 @@ function extractJsonFromMarkdown(text) {
 	return text;
 }
 
-export async function generateExplanation(tafseerText, verse) {
+export async function generateExplanation(tafseerText, verse, tafseerAuthor) {
 	const schema = {
 		explanation: 'string',
 		keyTerms: '{term: string, definition: string}[]',
 	};
+	const authorLabel = tafseerAuthor || 'The scholar';
+	const verseLabel = verse || 'the verse';
 	const query = `
-Rephrase the following tafseer in clear, simple, and concise language for a general audience:
+You are given a tafseer (Quranic commentary) by ${authorLabel} on ${verseLabel}. Your ONLY task is to REFORMAT it — do NOT change, add, or remove any meaning, ruling, or interpretation.
+
+When referring to the scholar in the explanation, use their name: "${authorLabel} said..." or "According to ${authorLabel}..."
+When referring to the verse, use: "${verseLabel}"
+
+TAFSEER TO REFORMAT:
 ${tafseerText}
 
-Guidelines:
-- Keep the tone formal but simple (not technical or slang).
-- Preserve the original meaning and context.
-- Organize the explanation using clear headings (#), subheadings (###), and bullet points (->).
-- Highlight and clearly summarize the important points.
-- Define key formal English words and Islamic terms used in the explanation.
-- Add a short final summary covering the main ideas.
+STRICT FORMATTING RULES — follow exactly:
+1. Use "# Heading" for each major topic or section found in the tafseer.
+2. Use "-> " (arrow + space) for every individual point, detail, or sub-idea under each heading.
+3. Every sentence or idea from the original tafseer MUST appear under some heading as an arrow point.
+4. Do NOT skip, merge away, or invent any content. Rephrase only for clarity — meaning stays identical.
+5. End with a "# Summary" section that lists the core takeaways as "-> " points.
 
-IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no extra text.
+EXAMPLE FORMAT (structure only — do not copy this content):
+# Main Theme
+-> First key point from the tafseer.
+-> Second key point from the tafseer.
+
+# Another Section
+-> Detail from the tafseer.
+-> Another detail.
+
+# Summary
+-> Core idea one.
+-> Core idea two.
+
+After reformatting, also extract key Islamic or formal English terms with their definitions.
+
+IMPORTANT: Respond ONLY with valid JSON. No markdown code blocks, no extra text outside JSON.
 Use this exact schema:
 {
-	"explanation": "your explanation text here",
+	"explanation": "your fully formatted explanation here (use \\n for newlines)",
 	"keyTerms": [{"term": "word", "definition": "meaning"}]
 }
 
 Rules for valid JSON:
 - All strings must be properly quoted with double quotes
-- Escape any quotes inside strings with backslash
+- Escape any internal double quotes with backslash: \\"
+- Use \\n for newlines inside the explanation string
 - No trailing commas
 - Complete all strings and arrays before closing
 `;
@@ -106,7 +128,7 @@ Rules for valid JSON:
 			const rawResponse = await ollamaClient.invoke([
 				{
 					role: 'system',
-					content: `You are a teacher who explains Quranic tafseer in simple formal language, not too friendly nor too technical. You ALWAYS respond with ONLY valid JSON - no markdown, no code blocks, no explanation outside JSON. Use this exact schema: {"explanation": "string", "keyTerms": [{"term": "string", "definition": "string"}]}`,
+					content: `You are a formatter of Quranic tafseer. Your sole job is to REFORMAT — not rewrite, not interpret, not alter — the given tafseer into structured headings (#) and arrow points (->), preserving every meaning exactly as given. You ALWAYS respond with ONLY valid JSON — no markdown, no code blocks, no text outside JSON. Schema: {"explanation": "string with \\n newlines", "keyTerms": [{"term": "string", "definition": "string"}]}`,
 				},
 				{
 					role: 'user',
