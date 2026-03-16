@@ -6,18 +6,23 @@
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
-		"test": "vitest"
+		"test": "vitest",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit push"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"drizzle-kit": "^0.31.9",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.43.0"
 	},
 	"dependencies": {
 		"@langchain/ollama": "^1.0.0",
+		"@neondatabase/serverless": "^1.0.2",
 		"@quranjs/api": "^2.0.0",
 		"cors": "^2.8.5",
 		"dotenv": "^17.2.3",
+		"drizzle-orm": "^0.45.1",
 		"express": "^5.1.0",
 		"extract-json-from-string": "^1.0.1"
 	}

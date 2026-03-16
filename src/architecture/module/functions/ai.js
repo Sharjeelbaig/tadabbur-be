@@ -1,4 +1,5 @@
 import ollamaClient, {jsonParser} from '../clients/ollamaClient';
+import { getOrGenerateTafseer } from '../clients/dbClient';
 
 /**
  * Attempts to repair malformed JSON by closing unterminated strings
@@ -68,6 +69,8 @@ function extractJsonFromMarkdown(text) {
 }
 
 export async function generateExplanation(tafseerText, verse, tafseerAuthor) {
+    // Use the caching layer to check for existing tafseer first
+    return await getOrGenerateTafseer(tafseerText, verse, tafseerAuthor, async () => {
 	const schema = {
 		explanation: 'string',
 		keyTerms: '{term: string, definition: string}[]',
@@ -171,9 +174,110 @@ Rules for valid JSON:
 	}
 	
 	// This should not be reached, but just in case
+		return {
+			explanation: 'An unexpected error occurred.',
+			keyTerms: [],
+			error: 'Unexpected error in generateExplanation'
+		};
+	});
+}
+
+/**
+ * Attempts to correct a previously generated explanation based on a user complaint.
+ * Evaluates the complaint against the source text to see if it's valid before modifying.
+ * 
+ * @param {string} originalExplanation - The previously generated explanation that the user flagged
+ * @param {string} userComplaint - The user's description of what is wrong
+ * @param {string} sourceText - The original source tafseer text
+ * @param {string} verse - The verse identifier
+ * @param {string} tafseerAuthor - The tafseer author
+ * @returns {Promise<object>} Corrected or evaluated explanation
+ */
+export async function correctTafsir(originalExplanation, userComplaint, sourceText, verse, tafseerAuthor) {
+	const authorLabel = tafseerAuthor || 'The scholar';
+	const verseLabel = verse || 'the verse';
+	
+	const query = `
+You previously generated a reformatted explanation of a tafseer by ${authorLabel} for ${verseLabel}.
+A user has reported an issue with your explanation.
+
+YOUR TASK:
+1. Evaluate if the user's complaint is valid by comparing it against the SOURCE TAFSEER.
+2. If the user is correct (e.g. you missed a point, hallucinated something, or mistranslated), produce a NEW CORRECTED explanation incorporating the fix.
+3. If the user's complaint contradicts the source tafseer or is just their personal opinion, keep your original explanation but add a note.
+
+SOURCE TAFSEER:
+${sourceText}
+
+YOUR ORIGINAL EXPLANATION:
+${originalExplanation}
+
+USER COMPLAINT:
+${userComplaint}
+
+STRICT FORMATTING RULES (same as before):
+1. Use "# Heading" for each major topic or section.
+2. Use "-> " (arrow + space) for every individual point.
+3. End with a "# Summary" section.
+4. Extract key terms.
+
+Respond ONLY with valid JSON exactly matching this schema:
+{
+	"isValidComplaint": boolean, 
+	"correctionReasoning": "Briefly explain if you made a change and why based on the source text",
+	"explanation": "your fully formatted explanation here (use \\n for newlines)",
+	"keyTerms": [{"term": "word", "definition": "meaning"}]
+}
+`;
+
+	const maxRetries = 2;
+	let lastError = null;
+	
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		try {
+			const rawResponse = await ollamaClient.invoke([
+				{
+					role: 'system',
+					content: `You are an expert reviewer of Quranic tafseer formatting. You only output valid JSON. Schema: {"isValidComplaint": boolean, "correctionReasoning": "string", "explanation": "string with \\n newlines", "keyTerms": [{"term": "string", "definition": "string"}]}`,
+				},
+				{
+					role: 'user',
+					content: query,
+				},
+			]);
+
+			const responseText = typeof rawResponse === 'string' 
+				? rawResponse 
+				: rawResponse.content || JSON.stringify(rawResponse);
+			
+			const jsonStr = extractJsonFromMarkdown(responseText);
+			const parsed = attemptJsonRepair(jsonStr);
+			
+			if (parsed && typeof parsed === 'object') {
+				return parsed;
+			}
+			throw new Error('Failed to parse JSON response');
+			
+		} catch (error) {
+			lastError = error;
+			console.error(`Attempt ${attempt + 1} failed:`, error.message);
+			
+			if (attempt === maxRetries) {
+				return {
+					isValidComplaint: false,
+					correctionReasoning: "Failed to process the correction request.",
+					explanation: originalExplanation, // Fallback to original
+					keyTerms: [],
+					error: 'Failed to generate proper JSON response from model',
+					details: lastError?.message
+				};
+			}
+		}
+	}
+	
 	return {
-		explanation: 'An unexpected error occurred.',
-		keyTerms: [],
-		error: 'Unexpected error in generateExplanation'
+		isValidComplaint: false,
+		explanation: originalExplanation,
+		error: 'Unexpected error in correctTafsir'
 	};
 }

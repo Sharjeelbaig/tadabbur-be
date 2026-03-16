@@ -1,5 +1,9 @@
 import { httpServerHandler } from 'cloudflare:node';
 import express from 'express';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 import listSurahRouter from './routes/list_surahs';
 import listTafseerRouter from './routes/list_tafseers';
 import listTranslationRouter from './routes/list_translations';
@@ -8,6 +12,7 @@ import generateExplanationRouter from './routes/generate_explanation';
 import retrieveSurahRouter from './routes/retrieve_surah';
 import retrieveTafseerRouter from './routes/retrieve_tafseer';
 import retrieveRecitationRouter from './routes/retrieve_recitation';
+import reportWrongRouter from './routes/report_wrong';
 import cors from 'cors';
 
 const app = express();
@@ -21,6 +26,7 @@ app.use('/', generateExplanationRouter);
 app.use('/', retrieveSurahRouter);
 app.use('/', retrieveTafseerRouter);
 app.use('/', retrieveRecitationRouter);
+app.use('/', reportWrongRouter);
 
 app.use((req, res) => res.status(404).send('Not Found'));
 
