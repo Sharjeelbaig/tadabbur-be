@@ -1,4 +1,4 @@
-import quranClient from '../clients/quranClient'
+import quranClient from '../clients/quranClient.js'
 
 export async function listSurahs(){
     const surahs = await quranClient?.chapters?.findAll()

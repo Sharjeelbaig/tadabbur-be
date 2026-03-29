@@ -13,6 +13,7 @@ import retrieveSurahRouter from './routes/retrieve_surah';
 import retrieveTafseerRouter from './routes/retrieve_tafseer';
 import retrieveRecitationRouter from './routes/retrieve_recitation';
 import reportWrongRouter from './routes/report_wrong';
+import verseChatRouter from './routes/verse_chat';
 import cors from 'cors';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/', retrieveSurahRouter);
 app.use('/', retrieveTafseerRouter);
 app.use('/', retrieveRecitationRouter);
 app.use('/', reportWrongRouter);
+app.use('/', verseChatRouter);
 
 app.use((req, res) => res.status(404).send('Not Found'));
 

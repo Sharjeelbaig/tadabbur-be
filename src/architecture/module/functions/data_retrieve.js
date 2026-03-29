@@ -1,4 +1,4 @@
-import quranClient from '../clients/quranClient'
+import quranClient from '../clients/quranClient.js'
 
 export async function retrieveSurah(surahId, translation_id) {
     const surah = await quranClient?.verses?.findByChapter(surahId, {
@@ -53,4 +53,3 @@ export async function retrieveRecitation(chapterId, reciterId) {
     })
     return audioFiles;
 }
-
