@@ -2,6 +2,23 @@ import express from 'express';
 import { generateExplanation } from '../architecture/module/functions/ai';
 
 const router = express.Router();
+const suggestedPrompt = 'What does this verse say?';
+
+const buildVerseChatFallback = (details) => ({
+    explanation: [
+        '# Explainer unavailable right now',
+        '-> The structured tafsir explainer is temporarily unavailable.',
+        `-> You can still ask grounded verse chat: "${suggestedPrompt}"`,
+        '-> Verse chat can still answer from the current ayah and selected tafsir.',
+        '# Summary',
+        '-> Use verse chat as the fallback explanation path for this ayah.',
+    ].join('\n'),
+    keyTerms: [],
+    cached: false,
+    fallbackMode: 'verse_chat',
+    suggestedPrompt,
+    details,
+});
 
 router.post('/generate-explanation', express.json(), async (req, res, next) => {
     try {
@@ -24,10 +41,9 @@ router.post('/generate-explanation', express.json(), async (req, res, next) => {
 // Error handler for this router
 router.use((err, req, res, next) => {
     if (err.message.includes('DATABASE_URL') || err.message.includes('connection')) {
-        return res.status(503).json({ 
-            error: 'Database connection failed', 
-            details: 'The tafseer caching system is currently unavailable. Please try again later.',
-            cached: false
+        return res.status(503).json({
+            ...buildVerseChatFallback('The tafseer caching system is currently unavailable.'),
+            error: 'Database connection failed',
         });
     }
     res.status(500).json({ 

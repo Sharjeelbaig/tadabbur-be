@@ -69,6 +69,24 @@ function extractJsonFromMarkdown(text) {
 }
 
 export async function generateExplanation(tafseerText, verse, tafseerAuthor) {
+	const suggestedPrompt = 'What does this verse say?';
+	const buildVerseChatFallback = (message, error, details) => ({
+		explanation: [
+			'# Explainer unavailable right now',
+			'-> The structured tafsir explainer could not be prepared for this ayah at the moment.',
+			`-> You can still use grounded verse chat and ask: "${suggestedPrompt}"`,
+			'-> Verse chat answers from the current ayah and the selected tafsir, so you still have a usable explanation path.',
+			'# Summary',
+			'-> The explainer is unavailable for now.',
+			'-> Use verse chat as the fallback for this ayah.',
+		].join('\n'),
+		keyTerms: [],
+		fallbackMode: 'verse_chat',
+		suggestedPrompt,
+		error,
+		details: details || message,
+	});
+
     // Use the caching layer to check for existing tafseer first
     return await getOrGenerateTafseer(tafseerText, verse, tafseerAuthor, async () => {
 	const schema = {
@@ -163,22 +181,20 @@ Rules for valid JSON:
 			// On last attempt, return a fallback response
 			if (attempt === maxRetries) {
 				console.error('All retry attempts failed, returning fallback response');
-				return {
-					explanation: 'We apologize, but the explanation could not be generated at this time. Please try again.',
-					keyTerms: [],
-					error: 'Failed to generate proper JSON response from AI model',
-					details: lastError?.message
-				};
+				return buildVerseChatFallback(
+					lastError?.message || 'Failed to generate proper JSON response from AI model',
+					'Failed to generate proper JSON response from AI model',
+					lastError?.message,
+				);
 			}
 		}
 	}
 	
 	// This should not be reached, but just in case
-		return {
-			explanation: 'An unexpected error occurred.',
-			keyTerms: [],
-			error: 'Unexpected error in generateExplanation'
-		};
+		return buildVerseChatFallback(
+			'Unexpected error in generateExplanation',
+			'Unexpected error in generateExplanation',
+		);
 	});
 }
 
