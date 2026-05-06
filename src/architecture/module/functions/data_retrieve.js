@@ -5,6 +5,10 @@ export async function retrieveSurah(surahId, translation_id) {
         words: true,
         translations: [translation_id],
         wordFields: ['textUthmani', 'transliteration', 'translation'],
+        fields: {
+            pageNumber: true,
+            juzNumber: true,
+        },
         per_page: 300,
         page: 1
     })
@@ -21,6 +25,8 @@ export async function retrieveSurah(surahId, translation_id) {
     }))?.filter(w => w.charType === 'word') // Filter out non-word characters like end markers
     const verse = data?.words?.map(word => word?.textUthmani)?.join(' ')
     const key = data?.verseKey
+    const page_number = data?.pageNumber
+    const juz_number = data?.juzNumber
     return (
         {
         verse,
@@ -28,7 +34,9 @@ export async function retrieveSurah(surahId, translation_id) {
         words,
         word_audios,
         word_translations,
-        key
+        key,
+        page_number,
+        juz_number
         }
     )
 })
