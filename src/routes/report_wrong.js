@@ -7,26 +7,34 @@ router.use(express.json());
 
 router.post('/report-wrong', async (req, res) => {
     try {
-        const { verse, tafseerAuthor, originalExplanation, userComplaint, sourceText } = req.body;
+        const {
+            verse,
+            tafseerAuthor,
+            tafsirAuthor,
+            originalExplanation,
+            userComplaint,
+            sourceText,
+        } = req.body;
+        const author = tafseerAuthor || tafsirAuthor || 'Unknown';
 
         if (!verse || !originalExplanation || !userComplaint || !sourceText) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
 
         // 1. Ask AI to evaluate complaint and potentially generate correction
-        console.log(`[Report-Wrong] Attempting correction for ${verse} by ${tafsirAuthor}`);
+        console.log(`[Report-Wrong] Attempting correction for ${verse} by ${author}`);
         const correctionResult = await correctTafsir(
             originalExplanation, 
             userComplaint, 
             sourceText, 
             verse, 
-            tafsirAuthor || 'Unknown'
+            author
         );
 
         // 2. Save flag to DB with correction results
         const savedFlag = await saveTafsirFlag(
             verse, 
-            tafsirAuthor, 
+            author,
             originalExplanation, 
             userComplaint, 
             correctionResult

@@ -2,6 +2,8 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { generatedTafsirCache, tafsirFlags } from '../db/schema.js';
+import { TAFSIR_MODEL } from './tafsirClient.js';
+import { TAFSIR_PROMPT_VERSION } from '../functions/tafsirPrompt.js';
 
 /**
  * Create and initialize the database connection
@@ -19,8 +21,13 @@ export async function createDbClient() {
  * @param {string} tafseerAuthor - The tafseer author
  * @returns {string} Unique hash key
  */
-export function generateCacheKey(tafseerText, verse, tafseerAuthor) {
-    const content = `${tafseerText}|${verse}|${tafseerAuthor}`;
+export function generateCacheKey(
+    tafseerText,
+    verse,
+    tafseerAuthor,
+    promptVersion = TAFSIR_PROMPT_VERSION,
+) {
+    const content = `${promptVersion}|${tafseerText}|${verse}|${tafseerAuthor}`;
     // Simple string hash that works for any length
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
@@ -48,6 +55,7 @@ export async function getCachedTafseer(cacheKey, verse, tafseerAuthor) {
             .from(generatedTafsirCache)
             .where(and(
                 eq(generatedTafsirCache.verseKey, verse),
+                eq(generatedTafsirCache.promptVersion, TAFSIR_PROMPT_VERSION),
                 or(
                     eq(generatedTafsirCache.tafsirAuthor, tafseerAuthor),
                     eq(generatedTafsirCache.tafsirName, tafseerAuthor)
@@ -59,7 +67,10 @@ export async function getCachedTafseer(cacheKey, verse, tafseerAuthor) {
     if (results.length === 0) {
         results = await db.select()
             .from(generatedTafsirCache)
-            .where(eq(generatedTafsirCache.sourceHash, cacheKey));
+            .where(and(
+                eq(generatedTafsirCache.sourceHash, cacheKey),
+                eq(generatedTafsirCache.promptVersion, TAFSIR_PROMPT_VERSION),
+            ));
     }
     
     if (results.length > 0) {
@@ -103,7 +114,7 @@ export async function saveTafseerToCache(cacheKey, tafseerText, verse, tafseerAu
             ayah,
             verseKey: verse || 'unknown',
             tafsirId: 0,
-            tafsirName: 'ollama',
+            tafsirName: tafseerAuthor || 'unknown',
             tafsirAuthor: tafseerAuthor || 'unknown',
             tafsirSlug: 'ollama',
             language: 'en',
@@ -113,16 +124,28 @@ export async function saveTafseerToCache(cacheKey, tafseerText, verse, tafseerAu
             arabicText: null,
             translationText: null,
             translationId: null,
-            model: 'gpt-oss:120b-cloud',
-            promptVersion: 'v1',
+            model: TAFSIR_MODEL,
+            promptVersion: TAFSIR_PROMPT_VERSION,
             additionalContext: JSON.stringify(generatedResult.keyTerms || []),
             sourceHash: cacheKey
         })
         .onConflictDoUpdate({
-            target: [generatedTafsirCache.sourceHash],
+            target: [
+                generatedTafsirCache.surah,
+                generatedTafsirCache.ayah,
+                generatedTafsirCache.tafsirId,
+            ],
             set: {
+                tafsirName: tafseerAuthor || 'unknown',
+                tafsirAuthor: tafseerAuthor || 'unknown',
+                originalTafsir: tafseerText,
+                sourceTafsirPlain: tafseerText,
                 explainedTafsir: generatedResult.explanation,
+                model: TAFSIR_MODEL,
+                promptVersion: TAFSIR_PROMPT_VERSION,
                 additionalContext: JSON.stringify(generatedResult.keyTerms || []),
+                sourceHash: cacheKey,
+                updatedAt: new Date().toISOString(),
             }
         })
         .returning();

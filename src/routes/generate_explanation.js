@@ -22,12 +22,24 @@ const buildVerseChatFallback = (details) => ({
 
 router.post('/generate-explanation', express.json(), async (req, res, next) => {
     try {
-        const { tafseerText, verse, tafseerAuthor } = req.body;
+        const {
+            tafseerText,
+            verse,
+            tafseerAuthor,
+            verseContext,
+            verseText,
+            verseTranslation,
+        } = req.body;
         if (!tafseerText) {
             return res.status(400).json({ error: 'tafseerText is required' });
         }
         
-        const result = await generateExplanation(tafseerText, verse, tafseerAuthor);
+        const result = await generateExplanation(tafseerText, verse, tafseerAuthor, {
+            ...verseContext,
+            verseKey: verseContext?.verseKey || verse,
+            arabicText: verseContext?.arabicText || verseText,
+            translation: verseContext?.translation || verseTranslation,
+        });
         res.json({
             ...result,
             cached: result.cached || false,
